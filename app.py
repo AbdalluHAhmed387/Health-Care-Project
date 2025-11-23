@@ -99,17 +99,19 @@ def rerun():
 with st.sidebar:
     st.header("💬 AI Health Assistant")
 
-    # Initialize chat history
+    # Initialize chat state
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
     if "ai_input_box" not in st.session_state:
         st.session_state.ai_input_box = "" 
 
-    # Function to handle sending message
+    # Function to send user message
     def send_message():
         user_msg = st.session_state.ai_input_box.strip()
         if not user_msg:
             return
+
+        # Generate AI response
         if ai_enabled:
             with st.spinner("🤖 AI is thinking..."):
                 try:
@@ -126,15 +128,18 @@ with st.sidebar:
                         ai_text = response.text
                     except:
                         ai_text = "".join([p.text for p in response.candidates[0].content.parts])
-                except Exception:
+                except:
                     ai_text = "⚠️ AI request failed or returned no text."
         else:
             ai_text = "⚠️ AI assistant is disabled."
 
-        st.session_state.chat_history.append([user_msg, ai_text])
+        # Store chat as dictionary
+        st.session_state.chat_history.append(
+            {"user": user_msg, "ai": ai_text}
+        )
         st.session_state.ai_input_box = ""  # clear input
 
-    # Fixed suggested questions
+    # Suggested questions
     st.markdown("**💡 Quick Questions:**")
     fixed_questions = [
         "What are the symptoms of heart disease?",
@@ -144,38 +149,40 @@ with st.sidebar:
         "How often should I get a heart checkup?"
     ]
 
-    # When user clicks a suggested question
     for i, q in enumerate(fixed_questions):
         if st.button(q, key=f"suggest_{i}"):
             st.session_state.ai_input_box = q
             send_message()
-            rerun()  
+            st.rerun()
 
-    # User input box with on_change (Enter triggers send_message)
+    # Input box (Enter sends message)
     st.text_input(
-        "Type your question:", 
+        "Type your question:",
         key="ai_input_box",
         value=st.session_state.ai_input_box,
         placeholder="E.g., What is a healthy BMI?",
         on_change=send_message
     )
 
-    # Display chat history in WhatsApp style (latest first)
-    st.markdown("---")
-    for user_msg, ai_msg in reversed(st.session_state.chat_history):
-        st.markdown(f"""
-        <div style='background:#DCF8C6; padding:8px 12px; border-radius:12px; margin-bottom:5px;'>
-            <strong> You:</strong> {user_msg}
-        </div>
-        """, unsafe_allow_html=True)
+    # Chat history
+    st.markdown("### 💬 Chat History")
+    chat_container = st.container()
 
-        st.markdown(f"""
-        <div style='background:#FFF; padding:8px 12px; border-radius:12px; margin-bottom:10px;'>
-            <strong>🤖 AI:</strong> {ai_msg}
-        </div>
-        """, unsafe_allow_html=True)
+    with chat_container:
+        for msg in st.session_state.chat_history:
+            st.markdown(
+                f"<div class='chat-user'><strong>You:</strong> {msg['user']}</div>",
+                unsafe_allow_html=True
+            )
+            st.markdown(
+                f"<div class='chat-ai'><strong>🤖 AI:</strong> {msg['ai']}</div>",
+                unsafe_allow_html=True
+            )
 
-
+    # Clear chat button
+    if st.button("Clear Chat"):
+        st.session_state.chat_history = []
+        st.rerun()
 
 # ---------------- Tabs ----------------
 tab1, tab2 = st.tabs(["Single prediction", "Upload CSV for batch prediction"])
@@ -418,3 +425,38 @@ st.markdown(
     <div class="footer">👨‍💻 Developed by our team</div>
     """,
     unsafe_allow_html=True)
+st.markdown("""
+<style>
+
+:root {
+    --chat-user-bg: #4caf50; 
+    --chat-user-text: white;
+
+    --chat-ai-bg: rgba(255,255,255,0.1);
+    --chat-ai-text: var(--text-color);
+}
+
+/* User bubble */
+.chat-user {
+    background: var(--chat-user-bg);
+    color: var(--chat-user-text);
+    padding: 10px 14px;
+    border-radius: 12px;
+    margin-bottom: 4px;
+    font-size: 15px;
+}
+
+/* AI bubble */
+.chat-ai {
+    background: var(--chat-ai-bg);
+    color: var(--chat-ai-text);
+    padding: 10px 14px;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    font-size: 15px;
+    border: 1px solid rgba(255,255,255,0.15);
+}
+
+</style>
+""", unsafe_allow_html=True)
+
