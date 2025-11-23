@@ -163,6 +163,10 @@ with st.sidebar:
         placeholder="E.g., What is a healthy BMI?",
         on_change=send_message
     )
+        # Clear chat button
+    if st.button("Clear Chat"):
+        st.session_state.chat_history = []
+        st.rerun()
 
     # Chat history
     st.markdown("### 💬 Chat History")
@@ -179,10 +183,7 @@ with st.sidebar:
                 unsafe_allow_html=True
             )
 
-    # Clear chat button
-    if st.button("Clear Chat"):
-        st.session_state.chat_history = []
-        st.rerun()
+
 
 # ---------------- Tabs ----------------
 tab1, tab2 = st.tabs(["Single prediction", "Upload CSV for batch prediction"])
