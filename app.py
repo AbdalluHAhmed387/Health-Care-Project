@@ -12,7 +12,7 @@ try:
 except:
     HAVE_GENAI = False
 
-GENAI_API_KEY = os.getenv("GENAI_API_KEY", "AIzaSyCY5cVto9vHfIhioKRiMAyWe-LttgRUq6I")
+GENAI_API_KEY = os.getenv("GENAI_API_KEY", "AIzaSyC8WlNuRi9SAwRdFBOxmbU_EKj2Hses9rY")
 if GENAI_API_KEY and HAVE_GENAI:
     try:
         client = genai.Client(api_key=GENAI_API_KEY)
@@ -286,60 +286,60 @@ with tab1:
     st.dataframe(input_df)
 
  # ----------------- Prediction & AI -----------------
-prediction = 0
-prob = None
-ai_input = ""
+    prediction = 0
+    prob = None
+    ai_input = ""
 
-if st.button("Predict Heart Attack"):
-    if model is None:
-        st.error("Model not loaded.")
-    else:
-        input_data = pd.DataFrame([{c:data[c] for c in required_columns}])
-        try:
-            prediction = model.predict(input_data)[0]
-            if hasattr(model, "predict_proba"):
-                prob = model.predict_proba(input_data)[0][1]
-        except Exception as e:
-            st.error("Prediction failed.")
-            st.exception(e)
-
-        # Display risk
-        if prediction == 1:
-            st.error("❗ High Risk Detected — You may be at risk of a heart attack.")
-            if prob is not None:
-                st.info(f"Predicted probability of risk: {prob:.3f}")
-            ai_input = f"I am at high risk of a heart attack. What lifestyle changes and precautions should I consider to reduce my risk?"
+    if st.button("Predict Heart Attack"):
+        if model is None:
+            st.error("Model not loaded.")
         else:
-            st.success("💚 You are not at risk based on the model.")
-            if prob is not None:
-                st.info(f"Predicted probability of risk: {prob:.3f}")
-            ai_input = f"I am not at risk of a heart attack. What lifestyle habits should I maintain to keep my heart healthy?"
+            input_data = pd.DataFrame([{c:data[c] for c in required_columns}])
+            try:
+                prediction = model.predict(input_data)[0]
+                if hasattr(model, "predict_proba"):
+                    prob = model.predict_proba(input_data)[0][1]
+            except Exception as e:
+                st.error("Prediction failed.")
+                st.exception(e)
 
-        # Call AI assistant if enabled
-        if ai_enabled and ai_input:
-            with st.spinner("🤖 AI is thinking..."):
-                try:
-                    system_prompt = """
-                            You are a professional AI health assistant. 
-                            Answer user questions strictly about medical, health, and lifestyle topics.
-                            Always provide accurate, evidence-based information.
-                            Do NOT give advice outside of health or medical context.
-                                """
+            # Display risk
+            if prediction == 1:
+                st.error("❗ High Risk Detected — You may be at risk of a heart attack.")
+                if prob is not None:
+                    st.info(f"Predicted probability of risk: {prob:.3f}")
+                ai_input = f"I am at high risk of a heart attack. What lifestyle changes and precautions should I consider to reduce my risk?"
+            else:
+                st.success("💚 You are not at risk based on the model.")
+                if prob is not None:
+                    st.info(f"Predicted probability of risk: {prob:.3f}")
+                ai_input = f"I am not at risk of a heart attack. What lifestyle habits should I maintain to keep my heart healthy?"
 
-                    user_question = ai_input 
-
-                    full_prompt = f"{system_prompt}\n\nUser question: {user_question}"
-
-                    response = client.models.generate_content(model="models/gemini-2.5-flash",contents=full_prompt)
-                    ai_text = response.text
-
+            # Call AI assistant if enabled
+            if ai_enabled and ai_input:
+                with st.spinner("🤖 AI is thinking..."):
                     try:
+                        system_prompt = """
+                                You are a professional AI health assistant. 
+                                Answer user questions strictly about medical, health, and lifestyle topics.
+                                Always provide accurate, evidence-based information.
+                                Do NOT give advice outside of health or medical context.
+                                    """
+
+                        user_question = ai_input 
+
+                        full_prompt = f"{system_prompt}\n\nUser question: {user_question}"
+
+                        response = client.models.generate_content(model="models/gemini-2.5-flash",contents=full_prompt)
                         ai_text = response.text
-                    except:
-                        ai_text = "".join([p.text for p in response.candidates[0].content.parts])
-                except Exception:
-                    ai_text = "AI request failed or returned no text."
-            st.markdown(f"<span style='color:white; padding:10px;'>**🤖 AI Assistant:** {ai_text}</span>", unsafe_allow_html=True)
+
+                        try:
+                            ai_text = response.text
+                        except:
+                            ai_text = "".join([p.text for p in response.candidates[0].content.parts])
+                    except Exception:
+                        ai_text = "AI request failed or returned no text."
+                st.markdown(f"<span style='color:white; padding:10px;'>**🤖 AI Assistant:** {ai_text}</span>", unsafe_allow_html=True)
 
 
 # ---------------- Batch CSV prediction ----------------
